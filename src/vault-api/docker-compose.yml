@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  vault-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - VAULT_MONGODB_ENDPOINT=mongodb://mongodb:27017
+    ports:
+      - 3000:3000
+    depends_on:
+      - mongodb
+      - localstacks3
+
+  mongodb:
+    image: mongo:latest
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongo
+      - MONGO_INITDB_ROOT_PASSWORD=mongo
+    ports: 
+      - 27017:27017
+
+  localstacks3:
+    image: localstack/localstack:latest
+    environment:
+      - SERVICES:s3
+      - DEFAULT_REGION=eu-west-1
+      - AWS_DEFAULT_REGION=eu-west-1
+      - HOSTNAME_EXTERNAL=localhost
+      - USE_SSL=false
+    ports:
+      - 4566:4566

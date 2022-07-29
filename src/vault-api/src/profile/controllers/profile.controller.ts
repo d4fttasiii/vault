@@ -10,15 +10,15 @@ import { ProfileService } from '../services/profile.service';
 @Controller({ version: '1', path: 'profile' })
 export class UserController {
 
-    constructor(private authService: AuthService, private userService: ProfileService) { }
+    constructor(private authService: AuthService, private profileService: ProfileService) { }
 
-    @Post('create')
+    @Post('register')
     @ApiBody({ type: RegisterDto })
     async register(@Body() createDto: RegisterDto) {
-        return await this.userService.create(createDto);
+        return await this.profileService.create(createDto);
     }
 
-    @Get('generate-message/:walletAddress')
+    @Get(':walletAddress/login-message')
     @ApiParam({ name: 'walletAddress', description: 'Should be a valid Solana address belonging to a user.' })
     @ApiOperation({ summary: 'Message will be returned which needs be signed for logging in on the connecting device.' })
     @ApiResponse({ status: 200, description: 'UUID message.' })

@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 
 export type ProfileDocument = Profile & Document;
 
-export class Session {
+export class AuthMessage {
     message: string;
     used: boolean;
 }
@@ -25,9 +25,9 @@ export class Profile {
     walletAddress: string;
 
     @Prop({
-        type: Session,
+        type: AuthMessage,
     })
-    session: Session;
+    lastAuthMessage: AuthMessage;
 }
 
 export const ProfileSchema = SchemaFactory.createForClass(Profile);

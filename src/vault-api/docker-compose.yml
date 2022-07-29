@@ -4,30 +4,29 @@ services:
   vault-api:
     build: 
       context: .
-      dockerfile: Dockerfile
-    environment:
-      - VAULT_MONGODB_ENDPOINT=mongodb://mongodb:27017
+      dockerfile: Dockerfile    
+    env_file:
+      - env/docker.env
     ports:
       - 3000:3000
     depends_on:
       - mongodb
-      - localstacks3
+      - minio
 
   mongodb:
     image: mongo:latest
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=mongo
-      - MONGO_INITDB_ROOT_PASSWORD=mongo
+    env_file:
+      - env/docker.env
+    volumes:
+      - ./data/mongo_data:/data/db
     ports: 
       - 27017:27017
 
-  localstacks3:
-    image: localstack/localstack:latest
-    environment:
-      - SERVICES:s3
-      - DEFAULT_REGION=eu-west-1
-      - AWS_DEFAULT_REGION=eu-west-1
-      - HOSTNAME_EXTERNAL=localhost
-      - USE_SSL=false
+  minio:
+    image: minio/minio:latest      
+    env_file:
+      - env/docker.env
+    command: server /data --console-address ":9001"
     ports:
-      - 4566:4566
+      - 9000:9000
+      - 9001:9001

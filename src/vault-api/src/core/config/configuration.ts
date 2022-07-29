@@ -8,9 +8,7 @@ export const VaultConfig = (): Config => ({
         cluster: process.env.VAULT_SOLANA_CLUSTER || 'https://api.devnet.solana.com',
     },
     mongoDb: {
-        endpoint: process.env.VAULT_MONGODB_ENDPOINT || 'mongodb://localhost:27017',
-        user: process.env.VAULT_MONGODB_USER || 'mongo',
-        pass: process.env.VAULT_MONGODB_PASS || 'mongo',
+        endpoint: process.env.VAULT_MONGODB_ENDPOINT || 'mongodb://mongo:mongo@localhost:27017',
         ssl: process.env.VAULT_MONGODB_SSL == 'true',
     },
     ipfs: {

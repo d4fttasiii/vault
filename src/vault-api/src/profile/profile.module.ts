@@ -36,11 +36,9 @@ import { ProfileSchema } from './schemas';
                 return {
                     uri: cfg.endpoint,
                     useNewUrlParser: true,
-                    user: cfg.user,
-                    pass: cfg.pass,
                     autoCreate: true,
-                    ssl: false,
-                    dbName: 'vault-db',
+                    ssl: cfg.ssl,
+                    dbName: 'vault',
                 };
             },
             inject: [ConfigService],

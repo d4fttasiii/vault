@@ -5,21 +5,21 @@ import * as nacl from 'tweetnacl';
 import { v4 as uuidv4 } from 'uuid';
 
 import { JwtPayload } from '../interfaces/jwt-payload';
-import { Session } from '../schemas';
+import { AuthMessage } from '../schemas';
 import { ProfileService } from './profile.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private jwtTokenService: JwtService,
-        private userService: ProfileService) { }
+        private profileService: ProfileService) { }
 
     async signIn(walletAddress: string, signature: string): Promise<any> {
-        const user = await this.userService.get(walletAddress);
+        const user = await this.profileService.get(walletAddress);
 
-        if (user && user.session && !user.session.used && this.verifySignature(walletAddress, user.session.message, signature)) {
+        if (user && user.lastAuthMessage && !user.lastAuthMessage.used && this.verifySignature(walletAddress, user.lastAuthMessage.message, signature)) {
             const payload: JwtPayload = { walletAddress: user.walletAddress };
-            user.session.used = true;
+            user.lastAuthMessage.used = true;
             await user.save();
 
             return {
@@ -36,8 +36,8 @@ export class AuthService {
             const payload = await this.jwtTokenService.verifyAsync(token);
             const { walletAddress } = payload;
 
-            let user = await this.userService.get(walletAddress);
-            if (user) {
+            let profile = await this.profileService.get(walletAddress);
+            if (profile) {
                 isValid = true;
             }
         } catch (error) {
@@ -48,15 +48,15 @@ export class AuthService {
     }
 
     async generateMessage(walletAddress: string): Promise<string> {
-        const user = await this.userService.get(walletAddress);
-        if (!user) {
+        const profile = await this.profileService.get(walletAddress);
+        if (!profile) {
             throw new UnauthorizedException();
         }
-        const session = new Session();
+        const session = new AuthMessage();
         session.message = uuidv4();
         session.used = false;
-        user.session = session;
-        await user.save();
+        profile.lastAuthMessage = session;
+        await profile.save();
 
         return session.message;
     }

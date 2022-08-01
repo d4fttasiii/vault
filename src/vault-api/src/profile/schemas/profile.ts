@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export type ProfileDocument = Profile & Document;
+export type ProfileDoc = Profile & Document;
 
 export class AuthMessage {
     message: string;

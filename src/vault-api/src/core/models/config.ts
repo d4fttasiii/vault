@@ -38,6 +38,7 @@ export interface JwtConfig {
 
 export interface MongoDbConfig {
     endpoint: string;
+    dbName: string;
     ssl: boolean;
 }
 

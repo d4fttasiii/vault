@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { utils } from '@project-serum/anchor';
 import {
     AccountInfo,
     Connection,
@@ -19,13 +18,10 @@ export class SolanaService {
 
     constructor(private configService: ConfigService) { }
 
-    public async findProgramAddress(programAddress: string, prefix: string, address: string[]): Promise<string> {
-        const [pda, _] = await PublicKey.findProgramAddress([
-            utils.bytes.utf8.encode(prefix),
-            ...address.map(a => new PublicKey(a).toBuffer())
-        ], new PublicKey(programAddress));
+    public async findProgramAddress(programAddress: string, buffers: (Buffer | Uint8Array)[]): Promise<PublicKey> {
+        const [pda, _] = await PublicKey.findProgramAddress(buffers, new PublicKey(programAddress));
 
-        return pda.toBase58();
+        return pda;
     }
 
     public async accountExists(address: string): Promise<boolean> {

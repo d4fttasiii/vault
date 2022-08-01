@@ -1,14 +1,14 @@
 import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { LoginDto, RegisterDto } from '../dtos';
-import { JwtAuthGuard } from '../guards/jwt-auth-guard';
-import { AuthService } from '../services/auth.service';
-import { ProfileService } from '../services/profile.service';
+import { LoginDto, RegisterDto } from '../../profile/dtos';
+import { JwtAuthGuard } from '../../profile/guards/jwt-auth-guard';
+import { AuthService } from '../../profile/services/auth.service';
+import { ProfileService } from '../../profile/services/profile.service';
 
 @ApiTags('Profile')
 @Controller({ version: '1', path: 'profile' })
-export class UserController {
+export class ProfileController {
 
     constructor(private authService: AuthService, private profileService: ProfileService) { }
 

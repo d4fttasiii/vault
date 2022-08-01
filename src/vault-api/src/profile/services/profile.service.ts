@@ -5,13 +5,13 @@ import { Model } from 'mongoose';
 import { SolanaService } from '../../core/services/solana.service';
 import { PROFILE_SCHEMA } from '../constants/profile-constants';
 import { RegisterDto } from '../dtos';
-import { ProfileDocument } from '../schemas';
+import { ProfileDoc } from '../schemas';
 
 @Injectable()
 export class ProfileService {
     constructor(
         private solanaService: SolanaService,
-        @InjectModel(PROFILE_SCHEMA) private profileModel: Model<ProfileDocument>) { }
+        @InjectModel(PROFILE_SCHEMA) private profileModel: Model<ProfileDoc>) { }
 
     async create(registration: RegisterDto): Promise<string> {
         this.solanaService.ensureValidAddress(registration.walletAddress);
@@ -26,7 +26,7 @@ export class ProfileService {
         return id;
     }
 
-    async get(walletAddress: string): Promise<ProfileDocument> {
+    async get(walletAddress: string): Promise<ProfileDoc> {
         return await this.profileModel.findOne({ walletAddress: walletAddress });
     }
 }

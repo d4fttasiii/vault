@@ -34,7 +34,6 @@ export class ProfileDocument extends Document {
         encryptedSize: number;
         name: string;
         extension: string;
-        pda: string;
     };
 
     updatedAt: Date;

@@ -1,19 +1,17 @@
+import { JwtConfig } from '@core/models/config';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectModel } from '@nestjs/mongoose';
 import { PassportStrategy } from '@nestjs/passport';
-import { JwtConfig } from 'doctive-core';
-import { Model } from 'mongoose';
+import { ProfileService } from '@profile/services/profile.service';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { JwtPayload } from '../interfaces/jwt-payload';
-import { User, UserDocument } from '../schemas';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         private readonly configService: ConfigService,
-        @InjectModel('USER') private userModel: Model<UserDocument>
+        private profileService: ProfileService,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -22,16 +20,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    async validate(payload: JwtPayload): Promise<User> {
+    async validate(payload: JwtPayload) {
         const { walletAddress } = payload;
-        const user = await this.userModel.findOne({
-            walletAddress: walletAddress,
-        });
+        const profile = await this.profileService.get(walletAddress);
 
-        if (!user) {
+        if (!profile) {
             throw new UnauthorizedException();
         }
 
-        return user;
+        return profile;
     }
 }

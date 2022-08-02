@@ -1,10 +1,11 @@
 import { SolanaConfig } from '@core/models/config';
 import { EncryptionService, S3Service, SolanaService } from '@core/services';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, StreamableFile, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { PROFILE_SCHEMA } from '@profile/constants/profile-constants';
 import { ProfileDoc } from '@profile/schemas';
+import { ProfileDocumentDoc } from '@profile/schemas/document';
 import { AnchorProvider, Idl, Program, utils, Wallet } from '@project-serum/anchor';
 import { ConfirmOptions, Connection, Keypair, PublicKey } from '@solana/web3.js';
 import {
@@ -13,7 +14,6 @@ import {
     PROFILE_DOCUMENT_SHARE_PDA_SEED,
     PROFILE_PDA_SEED,
 } from '@storage/constants/storage';
-import { ProfileDocumentDoc } from '@storage/schemas/document';
 import { Model } from 'mongoose';
 
 import * as VAULT_IDL from '../solana/idl/vault.json';
@@ -32,9 +32,9 @@ export class StorageService {
         @InjectModel(PROFILE_SCHEMA) private profileModel: Model<ProfileDoc>,
         @InjectModel(PROFILE_DOCUMENT_SCHEMA) private profileDocumentModel: Model<ProfileDocumentDoc>) { }
 
-    async listDocuments(profileId: string): Promise<ProfileDocumentDoc[]> {
+    async listDocuments(walletAddress: string): Promise<ProfileDocumentDoc[]> {
         const docs = await this.profileDocumentModel.find({
-            profileId: profileId
+            profileWalletAddress: walletAddress
         }).sort({
             createdAt: 'desc',
         }).exec();
@@ -42,22 +42,20 @@ export class StorageService {
         return docs;
     }
 
-    async upload(profileId: string, pda: string, name: string, content: Buffer, encryptionKey: string): Promise<string> {
-        const profile = await this.profileModel.findOne({ id: profileId });
-        const objectName = this.getObjectName(profile.walletAddress, name);
-        const encryptedContent = this.encrypt.encrypt(content, encryptionKey);
-        await this.s3.upload(objectName, encryptedContent);
-
+    async upload(walletAddress: string, name: string, content: Buffer): Promise<string> {
+        const profile = await this.profileModel.findOne({ walletAddress: walletAddress });
+        const objectName = `${this.storageBasePath}/${profile.walletAddress}/${name}`;
+        await this.s3.upload(objectName, content);
         const profileDoc = new this.profileDocumentModel({
-
             objectName: objectName,
             profileId: profile.id,
+            profileWalletAddress: walletAddress,
+            index: (await this.getDocumentCount(walletAddress)),
             metadata: {
                 name: name,
-                encryptedSize: encryptedContent.byteLength,
+                encryptedSize: content.byteLength,
                 originalSize: content.byteLength,
                 extension: this.getExtension(name),
-                pda: pda
             }
         });
         await profileDoc.save();
@@ -65,16 +63,23 @@ export class StorageService {
         return objectName;
     }
 
-    async download(objectName: string): Promise<Buffer> {
-        return await this.s3.download(objectName);
+    async download(ownerWalletAddress: string, index: number, downloaderWalletAddress: string): Promise<StreamableFile> {
+        if (ownerWalletAddress !== downloaderWalletAddress) {
+            this.ensureCanAccessDocuments(ownerWalletAddress, index, downloaderWalletAddress);
+        }
+
+        const document = await this.getDocument(ownerWalletAddress, index);
+        const content = await this.s3.download(document.objectName);
+
+        return new StreamableFile(content);
     }
 
-    async canAccessDocuments(profileDocumentId: string, inviteeAddress: string): Promise<boolean> {
+    async canAccessDocuments(ownerWalletAddress: string, index: number, downloaderWalletAddress: string): Promise<boolean> {
         const provider = this.getProvider();
         const program = new Program(VAULT_IDL as Idl, new PublicKey(VAULT_IDL.metadata.address), provider) as Program<Vault>;
-        const document = await this.profileDocumentModel.findOne({ id: profileDocumentId }).exec();
+        const document = await this.getDocument(ownerWalletAddress, index);
         const documentPda = await this.getProfileDocumentPda(document.profileWalletAddress, document.index);
-        const documentSharePda = await this.getProfileDocumentSharePda(documentPda, new PublicKey(inviteeAddress));
+        const documentSharePda = await this.getProfileDocumentSharePda(documentPda, new PublicKey(downloaderWalletAddress));
 
         const account = await provider.connection.getAccountInfo(documentSharePda, 'confirmed');
         if (!account) {
@@ -90,13 +95,35 @@ export class StorageService {
         return isActive && now <= validUntil;
     }
 
-    async ensureCanAccessDocuments(patientAddress: string, practitionerAddress: string): Promise<void> {
-        if (await this.canAccessDocuments(patientAddress, practitionerAddress)) {
+    async ensureCanAccessDocuments(ownerWalletAddress: string, index: number, downloaderWalletAddress: string): Promise<void> {
+        if (await this.canAccessDocuments(ownerWalletAddress, index, downloaderWalletAddress)) {
             return;
         }
 
         throw new UnauthorizedException();
     }
+
+    private async getDocument(walletAddress: string, index: number): Promise<ProfileDocumentDoc> {
+        return await this.profileDocumentModel.findOne({
+            profileWalletAddress: walletAddress,
+            index: index,
+        });
+    }
+
+    private async getDocumentCount(walletAddress: string): Promise<number> {
+        return await this.profileDocumentModel.count({
+            profileWalletAddress: walletAddress,
+        });
+    }
+
+    // private async getCurrentDocumentCount(walletAddress: string): Promise<number> {
+    //     const pda = await this.getProfilePda(walletAddress);
+    //     const provider = this.getProvider();
+    //     const program = new Program(VAULT_IDL as Idl, new PublicKey(VAULT_IDL.metadata.address), provider) as Program<Vault>;
+    //     const profile = await program.account.profileData.fetch(pda);
+
+    //     return profile.documentCount;
+    // }
 
     private getProvider(): AnchorProvider {
         const network = this.configService.get<SolanaConfig>('solana').cluster;
@@ -108,10 +135,6 @@ export class StorageService {
         const provider = new AnchorProvider(connection, wallet, opts);
 
         return provider;
-    }
-
-    private getObjectName(walletAddress: string, name: string): string {
-        return `${this.storageBasePath}/${walletAddress}/${name}`;
     }
 
     private getExtension(name: string) {

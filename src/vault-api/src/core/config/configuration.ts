@@ -10,14 +10,15 @@ export const VaultConfig = (): Config => ({
     mongoDb: {
         endpoint: process.env.VAULT_MONGODB_ENDPOINT || 'mongodb://mongo:mongo@localhost:27017',
         ssl: process.env.VAULT_MONGODB_SSL == 'true',
+        dbName: process.env.VAULT_MONGODB_DB_NAME || 'vault'
     },
     ipfs: {
         bucket: process.env.VAULT_S3_BUCKET || 'ipfs',
         endpoint: process.env.VAULT_S3_ENDPOINT || 'localhost',
-        port: process.env.VAULT_S3_PORT ? parseInt(process.env.VAULT_S3_PORT, 10) : 4566,
+        port: process.env.VAULT_S3_PORT ? parseInt(process.env.VAULT_S3_PORT, 10) : 9000,
         useSsl: process.env.VAULT_S3_SSL == 'true',
-        accessKey: process.env.VAULT_S3_ACCESSKEY || 'test',
-        secretKey: process.env.VAULT_S3_SECRETKEY || 'test',
+        accessKey: process.env.VAULT_S3_ACCESSKEY || 'root',
+        secretKey: process.env.VAULT_S3_SECRETKEY || 'Seecr3tK3Y',
     },
     redis: {
         host: process.env.VAULT_REDIS_URL || 'localhost',

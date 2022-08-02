@@ -21,6 +21,7 @@ export class Profile {
         unique: true,
         nullable: false,
         index: true,
+
     })
     walletAddress: string;
 

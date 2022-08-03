@@ -17,7 +17,9 @@ export class AuthService {
     async signIn(walletAddress: string, signature: string): Promise<any> {
         const user = await this.profileService.get(walletAddress);
 
-        if (user && user.lastAuthMessage && !user.lastAuthMessage.used && this.verifySignature(walletAddress, user.lastAuthMessage.message, signature)) {
+        if (user && user.lastAuthMessage &&
+            !user.lastAuthMessage.used &&
+            this.verifySignature(walletAddress, user.lastAuthMessage.message, signature)) {
             const payload: JwtPayload = { walletAddress: user.walletAddress };
             user.lastAuthMessage.used = true;
             await user.save();

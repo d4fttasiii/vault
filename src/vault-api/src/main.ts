@@ -11,6 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet());
+  app.enableCors();
   app.setGlobalPrefix('api');
   app.enableVersioning({
     type: VersioningType.URI,

@@ -1,16 +1,13 @@
-import { createApp } from 'vue';
-import { createPinia } from 'pinia';
-import SolanaWallets from 'solana-wallets-vue';
-
+import './index.css';
 import 'solana-wallets-vue/styles.css';
 
-import App from './App.vue';
-import  './index.css';
-import router from './router';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { createPinia } from 'pinia';
+import SolanaWallets from 'solana-wallets-vue';
+import { createApp } from 'vue';
 
-import {
-    PhantomWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
+import App from './App.vue';
+import router from './router';
 
 const walletOptions = {
     wallets: [
@@ -24,4 +21,3 @@ createApp(App)
     .use(createPinia())
     .use(router)
     .mount('#app');
-

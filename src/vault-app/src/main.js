@@ -6,8 +6,8 @@ import router from './router'
 import SolanaWallets from 'solana-wallets-vue';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 
-import './assets/main.css'
 import 'solana-wallets-vue/styles.css';
+import './index.css'
 
 const walletOptions = {
     wallets: [

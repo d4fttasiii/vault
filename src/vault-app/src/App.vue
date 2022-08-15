@@ -3,7 +3,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import { WalletMultiButton, useAnchorWallet, useWallet } from 'solana-wallets-vue'
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'
 import { AnchorProvider } from '@project-serum/anchor'
-import { watch , computed, reactive } from 'vue'
+import { watch, computed, reactive } from 'vue'
 import axios from 'axios'
 import { useJwtStore } from './stores/jwt';
 
@@ -45,11 +45,11 @@ const login = async (address) => {
   } catch (error) {
     console.log(error);
     jwtStore.reset();
-  } 
+  }
 }
 
 watch(() => solanaWallet.connected, async (isConnected, _) => {
-  if(isConnected){
+  if (isConnected) {
     await login(solanaWallet.publicKey.toBase58());
   }
 })
@@ -58,51 +58,14 @@ watch(() => solanaWallet.connected, async (isConnected, _) => {
 
 <template>
   <header>
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-        <RouterLink to="/documents">Documents</RouterLink>
-      </nav>
-    <WalletMultiButton :dark="true"></WalletMultiButton>
+    <nav class="flex items-center justify-between flex-wrap bg-gray-900 text-gray-100 p-4">
+      <RouterLink class="hover:text-gray-300" to="/">Home</RouterLink>
+      <RouterLink class="hover:text-gray-300" to="/about">About</RouterLink>
+      <RouterLink class="hover:text-gray-300" to="/documents">Documents</RouterLink>
+      <WalletMultiButton :dark="true"></WalletMultiButton>
+    </nav>
   </header>
-
-  <RouterView />
+  <div class="h-screen w-screen flex p-4 bg-gray-800 text-white">
+    <RouterView />
+  </div>
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-</style>

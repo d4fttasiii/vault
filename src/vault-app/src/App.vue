@@ -1,13 +1,15 @@
-<script setup lang="ts">
-import { computed } from "vue";
-import { useAnchorWallet } from "solana-wallets-vue";
-import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
-import { utils, Program, AnchorProvider } from "@project-serum/anchor";
-import Navigation from "./components/Navigation.vue";
+<script setup>
+import { RouterLink, RouterView } from 'vue-router'
+import { WalletMultiButton, useAnchorWallet, useWallet } from 'solana-wallets-vue'
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'
+import { AnchorProvider } from '@project-serum/anchor'
+import { watch , computed, reactive } from 'vue'
+import axios from 'axios'
+import { useJwtStore } from './stores/jwt';
 
-let practitionerAddress: string = "i1nVV2hL5rdyLrpLLqaaRmDeWJ91cjQmm3v5YWV379A";
-
-const wallet = useAnchorWallet();
+const anchorWallet = useAnchorWallet();
+const solanaWallet = reactive(useWallet());
+const jwtStore = useJwtStore();
 const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 const provider = computed(
   () =>
@@ -24,109 +26,83 @@ const program = computed(
     )
 );
 
-const approveRequest = async () => {
-  if (!wallet.value) {
+const login = async (address) => {
+  if (!anchorWallet.value) {
     return alert("Connect your wallet first.");
   }
+  try {
+    const { data } = await axios.get(
+      `http://localhost:3000/api/v1/profile/${address}/login-message`
+    );
+    const signature = await solanaWallet.signMessage(
+      Buffer.from(data, "utf-8")
+    );
+    const res = await axios.post("http://localhost:3000/api/v1/profile/login", {
+      walletAddress: address,
+      signature: signature,
+    });
+    jwtStore.set(res.data.access_token);
+  } catch (error) {
+    console.log(error);
+    jwtStore.reset();
+  } 
+}
 
-  const docAccessPda = await getPatientDocumentAccessPda(
-    wallet.value.publicKey,
-    practitionerAddress
-  );
-
-  // await program.rpc.approveAccessRequest(new PublicKey(practitionerAddress), {
-  //   accounts: {
-  //     patient: wallet.value.publicKey,
-  //     documentAccess: docAccessPda,
-  //   },
-  //   signers: [wallet.value]
-  // })
-
-  await program.value.methods
-    .approveAccessRequest(new PublicKey(practitionerAddress))
-    .accounts({
-      patient: wallet.value.publicKey,
-      documentAccess: docAccessPda,
-    })
-    .rpc();
-};
-
-const declineRequest = async () => {
-  if (!wallet.value) {
-    return alert("Connect your wallet first.");
+watch(() => solanaWallet.connected, async (isConnected, _) => {
+  if(isConnected){
+    await login(solanaWallet.publicKey.toBase58());
   }
-  const docAccessPda = await getPatientDocumentAccessPda(
-    wallet.value.publicKey,
-    practitionerAddress
-  );
+})
 
-  await program.value.methods
-    .declineAccessRequest(new PublicKey(practitionerAddress))
-    .accounts({
-      patient: wallet.value.publicKey,
-      documentAccess: docAccessPda,
-    })
-    .rpc();
-};
-
-const getPatientDocumentAccessPda = async (
-  patientWalletAddress: string,
-  practitionerWalletAddress: string
-) => {
-  const [pda, _] = await PublicKey.findProgramAddress(
-    [
-      utils.bytes.utf8.encode("patient-document-access"),
-      new PublicKey(practitionerWalletAddress).toBuffer(),
-      new PublicKey(patientWalletAddress).toBuffer(),
-    ],
-    program.value.programId
-  );
-
-  return pda;
-};
 </script>
 
 <template>
-  <Navigation />
-  <div class="h-screen w-screen flex bg-gray-900 text-gray-100">
-    <router-view></router-view>
-  </div>
-  <!--<div class="h-screen w-screen flex bg-gray-900 text-gray-100">
-    <div class="m-auto w-full max-w-md p-8">
-      <div class="shadow-xl rounded-xl bg-gray-700">
-        <div class="p-8 text-center">
-          <p class="uppercase text-xs tracking-widest text-gray-400 font-semibold">
-            Patient Document Access
-          </p>
-          <p class="font-bold text-5xl mt-2 text-white"></p>
-        </div>
-        <div>
-          <label>Practitioner</label>
-          <input
-            class="focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none w-full text-sm text-slate-900 placeholder-slate-400 rounded-md py-2 pl-4 ring-1 ring-slate-200 shadow-sm"
-            type="text"
-            placeholder="Practitioner Address"
-            v-model="practitionerAddress"
-          />
-        </div>
-        <div class="flex">
-          <button class="flex-1 py-4 px-2 rounded-bl-xl hover:bg-gray-800" @click="login">
-            Login
-          </button>
-          <button
-            class="flex-1 py-4 px-2 rounded-br-xl hover:bg-gray-800"
-            @click="approveRequest"
-          >
-            Approve Request
-          </button>
-        </div>
-      </div>
+  <header>
+      <nav>
+        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/about">About</RouterLink>
+        <RouterLink to="/documents">Documents</RouterLink>
+      </nav>
+    <WalletMultiButton :dark="true"></WalletMultiButton>
+  </header>
 
-      <div class="text-sm mt-8">
-        <p class="text-xs font-semibold text-gray-400">Wallet address:</p>
-        <p>{{ $wallet.publicKey.value?.toBase58() ?? "Not connected" }}</p>
-        <p class="text-xs font-semibold text-gray-400 mt-4">Program Address:</p>
-        <p>{{ VAULT_IDL.metadata.address ?? "Not created" }}</p>
-      </div>
-    </div>-->
+  <RouterView />
 </template>
+
+<style scoped>
+header {
+  line-height: 1.5;
+  max-height: 100vh;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto 2rem;
+}
+
+nav {
+  width: 100%;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+nav a.router-link-exact-active {
+  color: var(--color-text);
+}
+
+nav a.router-link-exact-active:hover {
+  background-color: transparent;
+}
+
+nav a {
+  display: inline-block;
+  padding: 0 1rem;
+  border-left: 1px solid var(--color-border);
+}
+
+nav a:first-of-type {
+  border: 0;
+}
+
+</style>

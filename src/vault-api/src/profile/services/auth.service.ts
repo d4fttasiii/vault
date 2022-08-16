@@ -10,64 +10,76 @@ import { ProfileService } from './profile.service';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private jwtTokenService: JwtService,
-        private profileService: ProfileService) { }
+  constructor(
+    private jwtTokenService: JwtService,
+    private profileService: ProfileService,
+  ) {}
 
-    async signIn(walletAddress: string, signature: string): Promise<any> {
-        const user = await this.profileService.get(walletAddress);
+  async signIn(walletAddress: string, signature: string): Promise<any> {
+    const user = await this.profileService.get(walletAddress);
 
-        if (user && user.lastAuthMessage &&
-            !user.lastAuthMessage.used &&
-            this.verifySignature(walletAddress, user.lastAuthMessage.message, signature)) {
-            const payload: JwtPayload = { walletAddress: user.walletAddress };
-            user.lastAuthMessage.used = true;
-            await user.save();
+    if (
+      user &&
+      user.lastAuthMessage &&
+      !user.lastAuthMessage.used &&
+      this.verifySignature(
+        walletAddress,
+        user.lastAuthMessage.message,
+        signature,
+      )
+    ) {
+      const payload: JwtPayload = { walletAddress: user.walletAddress };
+      user.lastAuthMessage.used = true;
+      await user.save();
 
-            return {
-                access_token: this.jwtTokenService.sign(payload),
-            };
-        }
-
-        throw new UnauthorizedException();
+      return {
+        access_token: this.jwtTokenService.sign(payload),
+      };
     }
 
-    async verifyJwt(token: string): Promise<boolean> {
-        let isValid: boolean = false;
-        try {
-            const payload = await this.jwtTokenService.verifyAsync(token);
-            const { walletAddress } = payload;
+    throw new UnauthorizedException();
+  }
 
-            let profile = await this.profileService.get(walletAddress);
-            if (profile) {
-                isValid = true;
-            }
-        } catch (error) {
-            throw new UnauthorizedException();
-        }
+  async verifyJwt(token: string): Promise<boolean> {
+    let isValid: boolean = false;
+    try {
+      const payload = await this.jwtTokenService.verifyAsync(token);
+      const { walletAddress } = payload;
 
-        return isValid;
+      let profile = await this.profileService.get(walletAddress);
+      if (profile) {
+        isValid = true;
+      }
+    } catch (error) {
+      throw new UnauthorizedException();
     }
 
-    async generateMessage(walletAddress: string): Promise<string> {
-        const profile = await this.profileService.get(walletAddress);
-        if (!profile) {
-            throw new UnauthorizedException();
-        }
-        const session = new AuthMessage();
-        session.message = uuidv4();
-        session.used = false;
-        profile.lastAuthMessage = session;
-        await profile.save();
+    return isValid;
+  }
 
-        return session.message;
+  async generateMessage(walletAddress: string): Promise<string> {
+    const profile = await this.profileService.get(walletAddress);
+    if (!profile) {
+      throw new UnauthorizedException();
     }
+    const session = new AuthMessage();
+    session.message = uuidv4();
+    session.used = false;
+    profile.lastAuthMessage = session;
+    await profile.save();
 
-    private verifySignature(walletAddress: string, msg: string, signature: string): boolean {
-        const signBytes = Buffer.from(signature, 'hex').subarray(0, 64);
-        const publicKey = new PublicKey(walletAddress).toBytes();
-        const msgBytes = Buffer.from(msg, 'utf-8');
+    return session.message;
+  }
 
-        return nacl.sign.detached.verify(msgBytes, signBytes, publicKey);
-    }
+  private verifySignature(
+    walletAddress: string,
+    msg: string,
+    signature: string,
+  ): boolean {
+    const signBytes = Buffer.from(signature, 'hex').subarray(0, 64);
+    const publicKey = new PublicKey(walletAddress).toBytes();
+    const msgBytes = Buffer.from(msg, 'utf-8');
+
+    return nacl.sign.detached.verify(msgBytes, signBytes, publicKey);
+  }
 }

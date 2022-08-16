@@ -15,36 +15,29 @@ import { ProfileService } from './services/profile.service';
 import { JwtStrategy } from './strategies/jwt-strategy';
 
 @Module({
-    imports: [
-        CoreModule,
-        HttpModule,
-        PassportModule.register({
-            defaultStrategy: 'jwt',
-            property: 'user',
-            session: false,
-        }),
-        JwtModule.registerAsync({
-            useFactory: (cfgService: ConfigService) => {
-                const cfg = cfgService.get<JwtConfig>('jwt');
-                return {
-                    secret: cfg.secretKey,
-                    signOptions: { expiresIn: cfg.expiration },
-                };
-            },
-            inject: [ConfigService]
-        }),
-        MongooseModule.forFeature([{ name: PROFILE_SCHEMA, schema: ProfileSchema }]),
-    ],
-    providers: [
-        ProfileService,
-        AuthService,
-        JwtStrategy,
-        JwtAuthGuard,
-    ],
-    exports: [
-        ProfileService,
-        AuthService,
-        JwtAuthGuard,
-    ]
+  imports: [
+    CoreModule,
+    HttpModule,
+    PassportModule.register({
+      defaultStrategy: 'jwt',
+      property: 'user',
+      session: false,
+    }),
+    JwtModule.registerAsync({
+      useFactory: (cfgService: ConfigService) => {
+        const cfg = cfgService.get<JwtConfig>('jwt');
+        return {
+          secret: cfg.secretKey,
+          signOptions: { expiresIn: cfg.expiration },
+        };
+      },
+      inject: [ConfigService],
+    }),
+    MongooseModule.forFeature([
+      { name: PROFILE_SCHEMA, schema: ProfileSchema },
+    ]),
+  ],
+  providers: [ProfileService, AuthService, JwtStrategy, JwtAuthGuard],
+  exports: [ProfileService, AuthService, JwtAuthGuard],
 })
-export class ProfileModule { }
+export class ProfileModule {}

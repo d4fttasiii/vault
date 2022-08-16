@@ -18,7 +18,8 @@ describe('EncryptionService', () => {
   });
 
   it('should encrypt and decrypt text input', () => {
-    const input = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
+    const input =
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
     const key = 's3cr3t';
 
     const encrypted = service.encryptString(input, key);

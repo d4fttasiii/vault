@@ -30,8 +30,7 @@ export class ProfileDocument extends Document {
     },
   })
   metadata: {
-    originalSize: number;
-    encryptedSize: number;
+    size: number;
     name: string;
     extension: string;
   };

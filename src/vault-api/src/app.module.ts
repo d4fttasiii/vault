@@ -11,6 +11,7 @@ import { VaultConfig } from './core/config/configuration';
       isGlobal: true,
       // envFilePath: './env/debug.env',
     }),
-    ApiModule],
+    ApiModule,
+  ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -9,24 +9,30 @@ import { ProfileDoc } from '../schemas';
 
 @Injectable()
 export class ProfileService {
-    constructor(
-        private solanaService: SolanaService,
-        @InjectModel(PROFILE_SCHEMA) private profileModel: Model<ProfileDoc>) { }
+  constructor(
+    private solanaService: SolanaService,
+    @InjectModel(PROFILE_SCHEMA) private profileModel: Model<ProfileDoc>,
+  ) {}
 
-    async create(registration: RegisterDto): Promise<string> {
-        this.solanaService.ensureValidAddress(registration.walletAddress);
-        const user = await this.profileModel.findOne({ walletAddress: registration.walletAddress });
-        if (user) {
-            throw new BadRequestException(registration.walletAddress, 'Profile already exists.');
-        }
-        const createdUser = new this.profileModel({
-            walletAddress: registration.walletAddress,
-        });
-        const { id } = await createdUser.save();
-        return id;
+  async create(registration: RegisterDto): Promise<string> {
+    this.solanaService.ensureValidAddress(registration.walletAddress);
+    const user = await this.profileModel.findOne({
+      walletAddress: registration.walletAddress,
+    });
+    if (user) {
+      throw new BadRequestException(
+        registration.walletAddress,
+        'Profile already exists.',
+      );
     }
+    const createdUser = new this.profileModel({
+      walletAddress: registration.walletAddress,
+    });
+    const { id } = await createdUser.save();
+    return id;
+  }
 
-    async get(walletAddress: string): Promise<ProfileDoc> {
-        return await this.profileModel.findOne({ walletAddress: walletAddress });
-    }
+  async get(walletAddress: string): Promise<ProfileDoc> {
+    return await this.profileModel.findOne({ walletAddress: walletAddress });
+  }
 }

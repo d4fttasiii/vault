@@ -1,18 +1,33 @@
 import { SolanaConfig } from '@core/models/config';
 import { EncryptionService, S3Service, SolanaService } from '@core/services';
-import { Injectable, StreamableFile, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  StreamableFile,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { PROFILE_SCHEMA } from '@profile/constants/profile-constants';
 import { ProfileDoc } from '@profile/schemas';
 import { ProfileDocumentDoc } from '@profile/schemas/document';
-import { AnchorProvider, Idl, Program, utils, Wallet } from '@project-serum/anchor';
-import { ConfirmOptions, Connection, Keypair, PublicKey } from '@solana/web3.js';
 import {
-    PROFILE_DOCUMENT_PDA_SEED,
-    PROFILE_DOCUMENT_SCHEMA,
-    PROFILE_DOCUMENT_SHARE_PDA_SEED,
-    PROFILE_PDA_SEED,
+  AnchorProvider,
+  Idl,
+  Program,
+  utils,
+  Wallet,
+} from '@project-serum/anchor';
+import {
+  ConfirmOptions,
+  Connection,
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
+import {
+  PROFILE_DOCUMENT_PDA_SEED,
+  PROFILE_DOCUMENT_SCHEMA,
+  PROFILE_DOCUMENT_SHARE_PDA_SEED,
+  PROFILE_PDA_SEED,
 } from '@storage/constants/storage';
 import { Model } from 'mongoose';
 

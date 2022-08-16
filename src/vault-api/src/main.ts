@@ -17,16 +17,18 @@ async function bootstrap() {
     type: VersioningType.URI,
   });
 
-  const document = SwaggerModule.createDocument(app, new DocumentBuilder()
-    .setTitle('Vault API')
-    .setVersion('1.0')
-    .build());
+  const document = SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder().setTitle('Vault API').setVersion('1.0').build(),
+  );
 
   SwaggerModule.setup('swagger', app, document);
 
   const configService = app.get<ConfigService>(ConfigService);
   const { port } = configService.get<AppConfig>('app');
 
-  await app.listen(port, () => console.log(`🔒 Vault API started on port: ${port}`));
+  await app.listen(port, () =>
+    console.log(`🔒 Vault API started on port: ${port}`),
+  );
 }
 bootstrap();

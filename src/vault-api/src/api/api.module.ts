@@ -6,13 +6,7 @@ import { DocumentController } from './controllers/document.controller';
 import { ProfileController } from './controllers/profile.controller';
 
 @Module({
-    imports: [
-        ProfileModule,
-        StorageModule,
-    ],
-    controllers: [
-        DocumentController,
-        ProfileController,
-    ]
+  imports: [ProfileModule, StorageModule],
+  controllers: [DocumentController, ProfileController],
 })
-export class ApiModule { }
+export class ApiModule {}

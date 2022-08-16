@@ -4,31 +4,30 @@ import { Document } from 'mongoose';
 export type ProfileDoc = Profile & Document;
 
 export class AuthMessage {
-    message: string;
-    used: boolean;
+  message: string;
+  used: boolean;
 }
 
 @Schema({
-    timestamps: {
-        createdAt: true,
-        updatedAt: true
-    },
+  timestamps: {
+    createdAt: true,
+    updatedAt: true,
+  },
 })
 export class Profile {
-    @Prop({
-        type: String,
-        length: 44,
-        unique: true,
-        nullable: false,
-        index: true,
+  @Prop({
+    type: String,
+    length: 44,
+    unique: true,
+    nullable: false,
+    index: true,
+  })
+  walletAddress: string;
 
-    })
-    walletAddress: string;
-
-    @Prop({
-        type: AuthMessage,
-    })
-    lastAuthMessage: AuthMessage;
+  @Prop({
+    type: AuthMessage,
+  })
+  lastAuthMessage: AuthMessage;
 }
 
 export const ProfileSchema = SchemaFactory.createForClass(Profile);

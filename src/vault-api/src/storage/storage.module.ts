@@ -8,15 +8,20 @@ import { PROFILE_DOCUMENT_SCHEMA } from './constants/storage';
 import { StorageService } from './services/storage.service';
 
 @Module({
-    imports: [
-        CoreModule,
-        MongooseModule.forFeature([{
-            name: PROFILE_DOCUMENT_SCHEMA, schema: ProfileDocumentSchema
-        }, {
-            name: PROFILE_SCHEMA, schema: ProfileSchema,
-        }])
-    ],
-    providers: [StorageService],
-    exports: [StorageService],
+  imports: [
+    CoreModule,
+    MongooseModule.forFeature([
+      {
+        name: PROFILE_DOCUMENT_SCHEMA,
+        schema: ProfileDocumentSchema,
+      },
+      {
+        name: PROFILE_SCHEMA,
+        schema: ProfileSchema,
+      },
+    ]),
+  ],
+  providers: [StorageService],
+  exports: [StorageService],
 })
-export class StorageModule { }
+export class StorageModule {}

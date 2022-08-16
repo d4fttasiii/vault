@@ -25,6 +25,15 @@ export class Profile {
   walletAddress: string;
 
   @Prop({
+    type: String,
+    length: 44,
+    unique: true,
+    nullable: false,
+    index: true,
+  })
+  profileAddress: string;
+
+  @Prop({
     type: AuthMessage,
   })
   lastAuthMessage: AuthMessage;

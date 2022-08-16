@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -29,7 +30,7 @@ export class DocumentController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('upload')
+  @Post()
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@Request() req, @UploadedFile() file: Express.Multer.File) {
     const walletAddress = req.user.walletAddress;
@@ -41,10 +42,27 @@ export class DocumentController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('download/:walletAddress/:index')
+  @Get(':walletAddress/:index')
   @ApiOperation({ summary: 'Download document' })
   @ApiResponse({ status: 200, description: 'Content of document' })
   async downloadFile(
+    @Request() req,
+    @Param('walletAddress') walletAddress: string,
+    @Param('index') index: string,
+  ) {
+    const downloaderWalletAddress = req.user.walletAddress;
+    return this.storageService.download(
+      walletAddress,
+      parseInt(index, 10),
+      downloaderWalletAddress,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':walletAddress/:index')
+  @ApiOperation({ summary: 'Delete document' })
+  @ApiResponse({ status: 200, description: 'Document was deleted' })
+  async deleteFile(
     @Request() req,
     @Param('walletAddress') walletAddress: string,
     @Param('index') index: string,

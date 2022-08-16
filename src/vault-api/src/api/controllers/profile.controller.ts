@@ -28,7 +28,7 @@ export class ProfileController {
     private profileService: ProfileService,
   ) {}
 
-  @Post('register')
+  @Post()
   @ApiBody({ type: RegisterDto })
   async register(@Body() createDto: RegisterDto) {
     return await this.profileService.create(createDto);

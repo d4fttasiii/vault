@@ -2,6 +2,7 @@ import { SolanaConfig } from '@core/models/config';
 import { EncryptionService, S3Service, SolanaService } from '@core/services';
 import {
   Injectable,
+  NotFoundException,
   StreamableFile,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -31,8 +32,8 @@ import {
 } from '@storage/constants/storage';
 import { Model } from 'mongoose';
 
-import * as VAULT_IDL from '../solana/idl/vault.json';
-import { Vault } from '../solana/types/vault';
+import * as VAULT_IDL from '../../core/solana/idl/vault.json';
+import { Vault } from '../../core/solana/types/vault';
 
 @Injectable()
 export class StorageService {
@@ -78,8 +79,7 @@ export class StorageService {
       index: await this.getDocumentCount(walletAddress),
       metadata: {
         name: name,
-        encryptedSize: content.byteLength,
-        originalSize: content.byteLength,
+        size: content.byteLength,
         extension: this.getExtension(name),
       },
     });
@@ -93,18 +93,29 @@ export class StorageService {
     index: number,
     downloaderWalletAddress: string,
   ): Promise<StreamableFile> {
-    if (ownerWalletAddress !== downloaderWalletAddress) {
+    const document = await this.getDocument(ownerWalletAddress, index);
+    if (document.profileWalletAddress !== downloaderWalletAddress) {
       this.ensureCanAccessDocuments(
         ownerWalletAddress,
         index,
         downloaderWalletAddress,
       );
     }
-
-    const document = await this.getDocument(ownerWalletAddress, index);
     const content = await this.s3.download(document.objectName);
 
     return new StreamableFile(content);
+  }
+
+  async delete(
+    ownerWalletAddress: string,
+    index: number,
+    downloaderWalletAddress: string,
+  ) {
+    const document = await this.getDocument(ownerWalletAddress, index);
+    if (document.profileWalletAddress !== downloaderWalletAddress) {
+      throw new UnauthorizedException();
+    }
+    await this.s3.delete(document.objectName);
   }
 
   async canAccessDocuments(
@@ -169,10 +180,15 @@ export class StorageService {
     walletAddress: string,
     index: number,
   ): Promise<ProfileDocumentDoc> {
-    return await this.profileDocumentModel.findOne({
+    const doc = await this.profileDocumentModel.findOne({
       profileWalletAddress: walletAddress,
       index: index,
     });
+    if (!doc) {
+      throw new NotFoundException();
+    }
+
+    return doc;
   }
 
   private async getDocumentCount(walletAddress: string): Promise<number> {

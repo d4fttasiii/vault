@@ -10,5 +10,4 @@
         "**/dist": false,
     },
     "editor.formatOnSave": true,
-    "typescriptHero.imports.organizeOnSave": true,
 }

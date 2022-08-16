@@ -13,7 +13,7 @@ export class ProfileDocument extends Document {
   @Prop({ type: S.Types.ObjectId, ref: 'Profile' })
   profileId: string;
 
-  @Prop({ type: String, index: true })
+  @Prop({ type: String, length: 44, nullable: false, index: true })
   profileWalletAddress: string;
 
   @Prop({ type: Number, index: true })

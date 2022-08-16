@@ -9,7 +9,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { PROFILE_SCHEMA } from '@profile/constants/profile-constants';
-import { ProfileDoc } from '@profile/schemas';
+import { ShareDocumentDto } from '@profile/dtos/share-document-dto';
+import { ProfileDoc, ProfileDocumentShareDoc } from '@profile/schemas';
 import { ProfileDocumentDoc } from '@profile/schemas/document';
 import {
   AnchorProvider,
@@ -28,6 +29,7 @@ import {
   PROFILE_DOCUMENT_PDA_SEED,
   PROFILE_DOCUMENT_SCHEMA,
   PROFILE_DOCUMENT_SHARE_PDA_SEED,
+  PROFILE_DOCUMENT_SHARE_SCHEMA,
   PROFILE_PDA_SEED,
 } from '@storage/constants/storage';
 import { Model } from 'mongoose';
@@ -44,9 +46,12 @@ export class StorageService {
     private configService: ConfigService,
     private encrypt: EncryptionService,
     private solanaService: SolanaService,
-    @InjectModel(PROFILE_SCHEMA) private profileModel: Model<ProfileDoc>,
+    @InjectModel(PROFILE_SCHEMA)
+    private profileModel: Model<ProfileDoc>,
     @InjectModel(PROFILE_DOCUMENT_SCHEMA)
     private profileDocumentModel: Model<ProfileDocumentDoc>,
+    @InjectModel(PROFILE_DOCUMENT_SHARE_SCHEMA)
+    private profileDocumentShareModel: Model<ProfileDocumentShareDoc>,
   ) {}
 
   async listDocuments(walletAddress: string): Promise<ProfileDocumentDoc[]> {
@@ -106,13 +111,15 @@ export class StorageService {
     return new StreamableFile(content);
   }
 
+  // async share()
+
   async delete(
     ownerWalletAddress: string,
     index: number,
-    downloaderWalletAddress: string,
+    callerAddress: string,
   ) {
     const document = await this.getDocument(ownerWalletAddress, index);
-    if (document.profileWalletAddress !== downloaderWalletAddress) {
+    if (document.profileWalletAddress !== callerAddress) {
       throw new UnauthorizedException();
     }
     await this.s3.delete(document.objectName);
@@ -158,6 +165,44 @@ export class StorageService {
     return isActive && now <= validUntil;
   }
 
+  async listSharedDocuments(walletAddress: string) {
+    return await this.profileDocumentShareModel
+      .find({
+        inviteeAddress: walletAddress,
+      })
+      .exec();
+  }
+
+  async shareDocument(data: ShareDocumentDto, callerAddress: string) {
+    const document = await this.getDocument(data.walletAddress, data.index);
+    if (document.profileWalletAddress !== callerAddress) {
+      throw new UnauthorizedException();
+    }
+    const shareValidUntil = await this.getDocumentShareValidUntil(
+      document,
+      data.inviteeAddress,
+    );
+
+    const existingShare = await this.profileDocumentShareModel.findOne({
+      inviteeAddress: data.inviteeAddress,
+      documentId: document._id,
+    });
+    if (!existingShare) {
+      const share = new this.profileDocumentShareModel({
+        documentId: document.id,
+        inviteeAddress: data.inviteeAddress,
+        sharePda: data.sharePda,
+        validUntil: shareValidUntil,
+      });
+
+      await share.save();
+      return;
+    }
+
+    existingShare.validUntil = shareValidUntil;
+    await existingShare.save();
+  }
+
   async ensureCanAccessDocuments(
     ownerWalletAddress: string,
     index: number,
@@ -174,6 +219,34 @@ export class StorageService {
     }
 
     throw new UnauthorizedException();
+  }
+
+  private async getDocumentShareValidUntil(
+    document: ProfileDocumentDoc,
+    inviteeAddress: string,
+  ): Promise<Date> {
+    const provider = this.getProvider();
+    const program = new Program(
+      VAULT_IDL as Idl,
+      new PublicKey(VAULT_IDL.metadata.address),
+      provider,
+    ) as Program<Vault>;
+    const documentPda = await this.getProfileDocumentPda(
+      document.profileWalletAddress,
+      document.index,
+    );
+    const documentSharePda = await this.getProfileDocumentSharePda(
+      documentPda,
+      new PublicKey(inviteeAddress),
+    );
+
+    const share = await program.account.documentShareData.fetch(
+      documentSharePda,
+    );
+    const approvedAt = share.updated.toNumber();
+    const validUntil = (approvedAt + 3600 * share.validUntil) * 1000;
+
+    return new Date(validUntil);
   }
 
   private async getDocument(

@@ -113,14 +113,31 @@ const shareDocument = async (doc) => {
         new PublicKey(data.invitee),
     )
 
-    await program.value.methods
-        .createProfileDocumentShare(new BN(doc.index), new PublicKey(data.invitee), new BN(8))
-        .accounts({
-            profile: wallet.value.publicKey,
-            document: profileDocumentPda,
-            documentShare: profileDocumentSharePda,
-        })
-        .rpc();
+    try {
+        await program.value.methods
+            .createProfileDocumentShare(new BN(doc.index), new PublicKey(data.invitee), new BN(8))
+            .accounts({
+                profile: wallet.value.publicKey,
+                document: profileDocumentPda,
+                documentShare: profileDocumentSharePda,
+            })
+            .rpc();
+
+    } catch {
+
+    }
+
+    const token = jwtStore.$state.token;
+    await axios.post('http://localhost:3000/api/v1/share', {
+        walletAddress: doc.profileWalletAddress,
+        index: doc.index,
+        inviteeAddress: data.invitee,
+        sharePda: profileDocumentSharePda.toBase58(),
+    }, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        },
+    })
 }
 
 onBeforeMount(() => {

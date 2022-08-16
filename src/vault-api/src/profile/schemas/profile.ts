@@ -31,12 +31,15 @@ export class Profile {
     nullable: false,
     index: true,
   })
-  profileAddress: string;
+  profilePda: string;
 
   @Prop({
     type: AuthMessage,
   })
   lastAuthMessage: AuthMessage;
+
+  updatedAt: Date;
+  createdAt: Date;
 }
 
 export const ProfileSchema = SchemaFactory.createForClass(Profile);

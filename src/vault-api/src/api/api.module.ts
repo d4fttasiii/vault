@@ -4,9 +4,10 @@ import { StorageModule } from '@storage/storage.module';
 
 import { DocumentController } from './controllers/document.controller';
 import { ProfileController } from './controllers/profile.controller';
+import { ShareController } from './controllers/share.controller';
 
 @Module({
   imports: [ProfileModule, StorageModule],
-  controllers: [DocumentController, ProfileController],
+  controllers: [DocumentController, ProfileController, ShareController],
 })
 export class ApiModule {}

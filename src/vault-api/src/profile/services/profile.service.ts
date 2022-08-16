@@ -42,7 +42,7 @@ export class ProfileService {
     }
     const createdUser = new this.profileModel({
       walletAddress: registration.walletAddress,
-      profileAddress: registration.profileAddress,
+      profilePda: registration.profileAddress,
     });
     const { id } = await createdUser.save();
     return id;

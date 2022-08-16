@@ -74,14 +74,19 @@ const uploadDocument = async () => {
   const profilePda = await getProfilePda(wallet.value.publicKey);
   const profileDocumentPda = await getProfileDocumentPda(wallet.value.publicKey, latestDocumentIndex);
 
-  await program.value.methods
-    .createProfileDocument(data.file.name)
-    .accounts({
-      profile: wallet.value.publicKey,
-      profileData: profilePda,
-      document: profileDocumentPda
-    })
-    .rpc();
+  try {
+    await program.value.methods
+      .createProfileDocument(data.file.name)
+      .accounts({
+        profile: wallet.value.publicKey,
+        profileData: profilePda,
+        document: profileDocumentPda
+      })
+      .rpc();
+  }
+  catch (error) {
+    console.error(error);
+  }
 
   let formData = new FormData();
   formData.append('file', data.file);

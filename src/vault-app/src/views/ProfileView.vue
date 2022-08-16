@@ -41,13 +41,17 @@ const createProfile = async () => {
   }
 
   const profilePda = new PublicKey(data.pda);
-  await program.value.methods
-    .createProfile()
-    .accounts({
-      profile: wallet.value.publicKey,
-      profileData: profilePda,
-    })
-    .rpc();
+  try {
+    await program.value.methods
+      .createProfile()
+      .accounts({
+        profile: wallet.value.publicKey,
+        profileData: profilePda,
+      })
+      .rpc();
+  } catch (error) {
+    console.error(error)
+  }
 
   await axios.post('http://localhost:3000/api/v1/profile', {
     walletAddress: wallet.value.publicKey.toBase58(),
@@ -75,9 +79,7 @@ watch(() => solanaWallet.connected, async (isConnected, _) => {
         <li>
           <span>Profile Address: {{ data.pda || 'Wallet not connected!' }}</span>
           <button class="rounded-full bg-blue-800 text-white p-2 mx-2"
-            :class="{ 'hover:bg-blue-600': !(data.pda && data.pdaExists) }" 
-            
-            @click="createProfile">
+            :class="{ 'hover:bg-blue-600': !(data.pda && data.pdaExists) }" @click="createProfile">
             <font-awesome-icon icon="fa-solid fa-plus" />
           </button>
         </li>

@@ -1,1 +1,1 @@
-export const PROFILE_SCHEMA = 'PROFILE';
+export const PROFILE_SCHEMA = 'profiles';

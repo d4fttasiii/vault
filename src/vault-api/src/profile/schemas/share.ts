@@ -20,6 +20,14 @@ export class ProfileDocumentShare {
     nullable: false,
     index: true,
   })
+  ownerAddress: string;
+
+  @Prop({
+    type: String,
+    length: 44,
+    nullable: false,
+    index: true,
+  })
   inviteeAddress: string;
 
   @Prop({

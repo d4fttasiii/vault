@@ -60,12 +60,13 @@ watch(() => solanaWallet.connected, async (isConnected, _) => {
   <header>
     <nav class="flex items-center justify-between flex-wrap bg-gray-900 text-gray-100 p-4">
       <RouterLink class="hover:text-gray-300" to="/">Profile</RouterLink>
+      <RouterLink class="hover:text-gray-300" to="/shared">Shared</RouterLink>
       <RouterLink class="hover:text-gray-300" to="/upload">Upload</RouterLink>
       <RouterLink class="hover:text-gray-300" to="/documents">Documents</RouterLink>
       <WalletMultiButton :dark="true"></WalletMultiButton>
     </nav>
   </header>
-  <div class="h-screen w-screen flex p-4 bg-gray-800 text-white">
+  <div class="h-screen p-4 bg-gray-800 text-white">
     <RouterView />
   </div>
 </template>

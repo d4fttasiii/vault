@@ -160,61 +160,61 @@ onBeforeMount(() => {
                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 id="invitee" type="text" v-model="data.invitee" />
         </div>
-        <div class="flex mt-10">
-            <table class="border-collapse table-auto w-100 text-sm">
-                <thead class="border-b">
-                    <tr>
-                        <th
-                            class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">
-                            Nr.</th>
-                        <th
-                            class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">
-                            Name</th>
-                        <th
-                            class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">
-                            Uploaded At</th>
-                        <th
-                            class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">
-                            Size</th>
-                        <th
-                            class="border-b dark:border-slate-600 font-medium p-4 pl-8 pt-0 pb-3 text-slate-400 dark:text-slate-200 text-left">
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-slate-800">
-                    <tr v-for="doc in documents" :key="doc._id">
-                        <td
-                            class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
-                            {{ doc.index }}</td>
-                        <td
-                            class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
-                            {{ doc.metadata.name }}</td>
-                        <td
-                            class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
-                            {{ doc.createdAt }}</td>
-                        <td
-                            class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
-                            {{ doc.metadata.size }}</td>
-                        <td
-                            class="border-b border-slate-100 dark:border-slate-700 p-4 pl-8 text-slate-500 dark:text-slate-400">
-                            <div class="flex">
-                                <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-2 mx-2"
-                                    @click="() => downloadDocument(doc)">
-                                    <font-awesome-icon icon="fa-solid fa-download"></font-awesome-icon>
-                                </button>
-                                <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-2 mx-2"
-                                    @click="() => shareDocument(doc)">
-                                    <font-awesome-icon icon="fa-solid fa-share"></font-awesome-icon>
-                                </button>
-                                <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-2 mx-2"
-                                    @click="() => deleteDocument(doc)">
-                                    <font-awesome-icon icon="fa-solid fa-circle-xmark" />
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="mt-10 w-full">
+            <div class="inline-block w-full shadow-md rounded-lg overflow-hidden">
+                <table class="w-full leading-normal">
+                    <thead>
+                        <tr>
+                            <th
+                                class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                Nr.
+                            </th>
+                            <th
+                                class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                Metadata
+                            </th>
+                            <th
+                                class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                Created At / Updated At
+                            </th>
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="doc in documents" :key="doc._id">
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <p class="text-gray-900 whitespace-no-wrap">
+                                    {{ doc.index }}
+                                </p>
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <p class="text-gray-900 whitespace-no-wrap">{{ doc.metadata.name }}</p>
+                                <p class="text-gray-600 whitespace-no-wrap">{{ doc.metadata.size / 1000 }} KB</p>
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <p class="text-gray-900 whitespace-no-wrap">{{ doc.createdAt }}</p>
+                                <p class="text-gray-900 whitespace-no-wrap">{{ doc.updatedAt }}</p>
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
+                                <div class="flex">
+                                    <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                        @click="() => downloadDocument(doc)">
+                                        <font-awesome-icon icon="fa-solid fa-download"></font-awesome-icon>
+                                    </button>
+                                    <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                        @click="() => shareDocument(doc)">
+                                        <font-awesome-icon icon="fa-solid fa-share"></font-awesome-icon>
+                                    </button>
+                                    <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                        @click="() => deleteDocument(doc)">
+                                        <font-awesome-icon icon="fa-solid fa-circle-xmark" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 </template>

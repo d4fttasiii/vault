@@ -1,3 +1,5 @@
+import { DocumentData, DocumentMetadata, SharedDocument } from '@core/dtos';
+import { CreateDocumentShareDto } from '@core/dtos/create-document-share-dto';
 import { SolanaConfig } from '@core/models/config';
 import { EncryptionService, S3Service, SolanaService } from '@core/services';
 import {
@@ -9,7 +11,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { PROFILE_SCHEMA } from '@profile/constants/profile-constants';
-import { ShareDocumentDto } from '@profile/dtos/share-document-dto';
 import { ProfileDoc, ProfileDocumentShareDoc } from '@profile/schemas';
 import { ProfileDocumentDoc } from '@profile/schemas/document';
 import {
@@ -54,7 +55,7 @@ export class StorageService {
     private profileDocumentShareModel: Model<ProfileDocumentShareDoc>,
   ) {}
 
-  async listDocuments(walletAddress: string): Promise<ProfileDocumentDoc[]> {
+  async listDocuments(walletAddress: string): Promise<DocumentData[]> {
     const docs = await this.profileDocumentModel
       .find({
         profileWalletAddress: walletAddress,
@@ -63,8 +64,37 @@ export class StorageService {
         createdAt: 'desc',
       })
       .exec();
+    const shares = await this.profileDocumentShareModel.find({
+      $and: [
+        {
+          ownerAddress: walletAddress,
+        },
+        {
+          documentId: { $in: docs.map((d) => d._id) },
+        },
+      ],
+    });
 
-    return docs;
+    return docs.map((d) => {
+      const docShares = shares.filter((s) => s.documentId == d._id);
+      return {
+        _id: d._id,
+        metadata: d.metadata as DocumentMetadata,
+        index: d.index,
+        profileAddress: d.profileWalletAddress,
+        documentPda: d.documentPda,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
+        shares: docShares.map((ds) => {
+          return {
+            inviteeAddress: ds.inviteeAddress,
+            updatedAt: ds.updatedAt,
+            validUntil: ds.validUntil,
+            sharePda: ds.sharePda,
+          };
+        }),
+      };
+    });
   }
 
   async upload(
@@ -100,7 +130,7 @@ export class StorageService {
   ): Promise<StreamableFile> {
     const document = await this.getDocument(ownerWalletAddress, index);
     if (document.profileWalletAddress !== downloaderWalletAddress) {
-      this.ensureCanAccessDocuments(
+      await this.ensureCanAccessDocuments(
         ownerWalletAddress,
         index,
         downloaderWalletAddress,
@@ -110,8 +140,6 @@ export class StorageService {
 
     return new StreamableFile(content);
   }
-
-  // async share()
 
   async delete(
     ownerWalletAddress: string,
@@ -165,15 +193,34 @@ export class StorageService {
     return isActive && now <= validUntil;
   }
 
-  async listSharedDocuments(walletAddress: string) {
-    return await this.profileDocumentShareModel
+  async listSharedDocuments(walletAddress: string): Promise<SharedDocument[]> {
+    const shares = await this.profileDocumentShareModel
       .find({
         inviteeAddress: walletAddress,
       })
       .exec();
+    const docs = await this.profileDocumentModel.find({
+      _id: { $in: shares.map((s) => s.documentId) },
+    });
+
+    return docs.map((d) => {
+      const share = shares.find((s) => s.documentId == d.id);
+      return {
+        _id: share._id,
+        index: d.index,
+        ownerAddress: d.profileWalletAddress,
+        updatedAt: share?.updatedAt,
+        createdAt: share?.createdAt,
+        validUntil: share?.validUntil,
+        sharePda: share?.sharePda,
+        filename: d.metadata.name,
+        extension: d.metadata.extension,
+        size: d.metadata.size,
+      };
+    });
   }
 
-  async shareDocument(data: ShareDocumentDto, callerAddress: string) {
+  async shareDocument(data: CreateDocumentShareDto, callerAddress: string) {
     const document = await this.getDocument(data.walletAddress, data.index);
     if (document.profileWalletAddress !== callerAddress) {
       throw new UnauthorizedException();
@@ -191,6 +238,7 @@ export class StorageService {
       const share = new this.profileDocumentShareModel({
         documentId: document.id,
         inviteeAddress: data.inviteeAddress,
+        ownerAddress: document.profileWalletAddress,
         sharePda: data.sharePda,
         validUntil: shareValidUntil,
       });

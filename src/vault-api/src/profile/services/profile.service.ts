@@ -8,7 +8,7 @@ import { Model } from 'mongoose';
 import { SolanaService } from '../../core/services/solana.service';
 import * as VAULT_IDL from '../../core/solana/idl/vault.json';
 import { PROFILE_SCHEMA } from '../constants/profile-constants';
-import { RegisterDto } from '../dtos';
+import { RegisterDto } from '../../core/dtos';
 import { ProfileDoc } from '../schemas';
 
 @Injectable()

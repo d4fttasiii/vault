@@ -1,5 +1,5 @@
 <script setup>
-;
+
 import axios from 'axios'
 import { useAnchorWallet, useWallet } from 'solana-wallets-vue'
 import { ref, reactive, computed } from 'vue'
@@ -110,15 +110,13 @@ const uploadDocument = async () => {
   <main>
     <h1 class="text-3xl font-bold underline">Upload</h1>
     <div class="flex mt-10">
-      <div class="large-12 medium-12 small-12 cell">
-        <label>File
-          <input type="file" id="file" ref="file" @change="handleFileUpload" />
-        </label>
-        <br />
-        <progress max="100" :value.prop="data.uploadPercentage"></progress>
-        <br />
-        <button v-on:click="uploadDocument()">Upload</button>
-      </div>
+      <input
+        class="block w-full text-lg text-gray-900 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 mr-5"
+        id="file" type="file" @change="handleFileUpload" />
+
+      <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2" v-on:click="uploadDocument()">
+        <font-awesome-icon icon="fa-solid fa-upload" />
+      </button>
     </div>
   </main>
 </template>

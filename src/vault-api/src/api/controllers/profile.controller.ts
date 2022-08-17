@@ -1,3 +1,4 @@
+import { LoginDto, RegisterDto } from '@core/dtos';
 import {
   Body,
   Controller,
@@ -14,11 +15,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-
-import { LoginDto, RegisterDto } from '../../profile/dtos';
-import { JwtAuthGuard } from '../../profile/guards/jwt-auth-guard';
-import { AuthService } from '../../profile/services/auth.service';
-import { ProfileService } from '../../profile/services/profile.service';
+import { JwtAuthGuard } from '@profile/guards/jwt-auth-guard';
+import { AuthService } from '@profile/services/auth.service';
+import { ProfileService } from '@profile/services/profile.service';
 
 @ApiTags('Profile')
 @Controller({ version: '1', path: 'profile' })

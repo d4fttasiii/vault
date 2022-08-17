@@ -78,7 +78,7 @@ watch(() => solanaWallet.connected, async (isConnected, _) => {
         <li>Connected Wallet: {{ data.walletAddress || 'Wallet not connected!' }}</li>
         <li>
           <span>Profile Address: {{ data.pda || 'Wallet not connected!' }}</span>
-          <button class="rounded-full bg-blue-800 text-white p-2 mx-2"
+          <button class="rounded-full bg-blue-800 text-white p-1 px-2 mx-2"
             :class="{ 'hover:bg-blue-600': !(data.pda && data.pdaExists) }" @click="createProfile">
             <font-awesome-icon icon="fa-solid fa-plus" />
           </button>

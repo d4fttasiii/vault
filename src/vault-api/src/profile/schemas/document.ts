@@ -16,6 +16,9 @@ export class ProfileDocument extends Document {
   @Prop({ type: String, length: 44, nullable: false, index: true })
   profileWalletAddress: string;
 
+  @Prop({ type: String })
+  documentPda: string;
+
   @Prop({ type: Number, index: true })
   index: number;
 

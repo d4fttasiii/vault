@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ShareDocumentDto {
+export class CreateDocumentShareDto {
   @ApiProperty({ type: 'string' })
   walletAddress: string;
   @ApiProperty({ type: 'number' })

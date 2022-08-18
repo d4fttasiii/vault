@@ -30,9 +30,22 @@ pub mod vault {
         document.profile = ctx.accounts.profile.key();
         document.name = name;
         document.index = profile.document_count;
+        document.deleted = false;
 
         profile.document_count += 1;
         profile.updated = Clock::get()?.unix_timestamp;
+       
+        Ok(())
+    }
+
+    pub fn delete_profile_document(ctx: Context<DeleteProfileDocument>, _document_index: u64) -> Result<()> {
+        let profile = &mut ctx.accounts.profile_data;
+        if profile.profile.key() != ctx.accounts.profile.key() {
+            return err!(ErrorCode::OnlyProfileOwnerCanAccess);
+        }
+
+        let document = &mut ctx.accounts.document;
+        document.deleted = true;
        
         Ok(())
     }
@@ -45,6 +58,10 @@ pub mod vault {
 
         if ctx.accounts.profile.key() != ctx.accounts.document.profile.key() {
             return err!(ErrorCode::OnlyProfileOwnerCanAccess);
+        }
+
+        if ctx.accounts.document.deleted {
+            return err!(ErrorCode::DocumentAlreadyDeleted);
         }
 
         let document_share = &mut ctx.accounts.document_share;
@@ -109,6 +126,30 @@ pub struct CreateProfileDocument<'info> {
             profile_data.document_count.to_string().as_bytes().as_ref()
         ], 
         bump,
+    )]
+    pub document: Account<'info, DocumentData>,
+    #[account(
+        mut,
+        seeds = [PROFILE_PDA_SEED.as_ref(), profile.key().as_ref()], 
+        bump
+    )]
+    pub profile_data: Account<'info, ProfileData>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(document_index: u64)]
+pub struct DeleteProfileDocument<'info> {
+    #[account(mut)]
+    pub profile: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [
+            PROFILE_DOCUMENT_PDA_SEED.as_ref(), 
+            profile.key().as_ref(), 
+            document_index.to_string().as_bytes().as_ref()
+        ], 
+        bump
     )]
     pub document: Account<'info, DocumentData>,
     #[account(
@@ -187,13 +228,14 @@ pub struct ProfileData {
     pub updated: i64,
 }
 
-pub const DOCUMENT_LEN: usize = 32 + (4 + 64) + 8 + 8 + 8;
+pub const DOCUMENT_LEN: usize = 32 + (4 + 64) + 8 + 8 + 1 + 8;
 #[account]
 pub struct DocumentData {
     pub profile: Pubkey,
     pub name: String,
     pub index: u64,
     pub created: i64,
+    pub deleted: bool,
 }
 
 pub const DOCUMENT_SHARE_LEN: usize = 32 + 8 + 8 + 8 + 8 + 1 + 1 + 8;
@@ -212,4 +254,6 @@ pub struct DocumentShareData {
 pub enum ErrorCode {
     #[msg("OnlyProfileOwnerCanAccess")]
     OnlyProfileOwnerCanAccess,
+    #[msg("DocumentAlreadyDeleted")]
+    DocumentAlreadyDeleted,
 }

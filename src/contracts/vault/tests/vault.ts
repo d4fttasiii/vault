@@ -99,7 +99,7 @@ describe("vault", () => {
     ).to.be.eql(5);
   });
 
-  it("Sharing the 2nd document", async () => {
+  it("Sharing the 3rd document", async () => {
     const profileDocumentPda = await getProfileDocumentPda(
       provider.wallet.publicKey,
       2
@@ -131,7 +131,7 @@ describe("vault", () => {
     ).to.be.eql(bob.publicKey.toBase58());
   });
 
-  it("Revoke 2nd document share", async () => {
+  it("Revoke 3rd document share", async () => {
     const profileDocumentPda = await getProfileDocumentPda(
       provider.wallet.publicKey,
       2
@@ -154,5 +154,26 @@ describe("vault", () => {
       (await program.account.documentShareData.fetch(profileDocumentSharePda))
         .isActive
     ).to.be.eql(false);
+  });
+
+  it("Delete 4th document", async () => {
+    const profilPda = await getProfilePda(provider.wallet.publicKey);
+    const profileDocumentPda = await getProfileDocumentPda(
+      provider.wallet.publicKey,
+      3
+    );
+
+    await program.methods
+      .deleteProfileDocument(new BN(3))
+      .accounts({
+        profile: provider.wallet.publicKey,
+        document: profileDocumentPda,
+        profileData: profilPda,
+      })
+      .rpc();
+
+    expect(
+      (await program.account.documentData.fetch(profileDocumentPda)).deleted
+    ).to.be.eql(true);
   });
 });

@@ -205,7 +205,11 @@ onBeforeMount(() => {
                                         @click="() => shareDocument(doc)">
                                         <font-awesome-icon icon="fa-solid fa-share"></font-awesome-icon>
                                     </button>
-                                    <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                    <button class="rounded-full bg-blue-600 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                        >
+                                        <font-awesome-icon icon="fa-solid fa-angle-down" />
+                                    </button>
+                                    <button class="rounded-full bg-red-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
                                         @click="() => deleteDocument(doc)">
                                         <font-awesome-icon icon="fa-solid fa-circle-xmark" />
                                     </button>

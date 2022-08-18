@@ -55,6 +55,37 @@
       ]
     },
     {
+      "name": "deleteProfileDocument",
+      "accounts": [
+        {
+          "name": "profile",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "document",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "profileData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "documentIndex",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "createProfileDocumentShare",
       "accounts": [
         {
@@ -174,6 +205,10 @@
           {
             "name": "created",
             "type": "i64"
+          },
+          {
+            "name": "deleted",
+            "type": "bool"
           }
         ]
       }
@@ -220,6 +255,11 @@
       "code": 6000,
       "name": "OnlyProfileOwnerCanAccess",
       "msg": "OnlyProfileOwnerCanAccess"
+    },
+    {
+      "code": 6001,
+      "name": "DocumentAlreadyDeleted",
+      "msg": "DocumentAlreadyDeleted"
     }
   ],
   "metadata": {

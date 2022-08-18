@@ -3,6 +3,7 @@ import { CreateDocumentShareDto } from '@core/dtos/create-document-share-dto';
 import { SolanaConfig } from '@core/models/config';
 import { EncryptionService, S3Service, SolanaService } from '@core/services';
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   StreamableFile,
@@ -76,7 +77,7 @@ export class StorageService {
     });
 
     return docs.map((d) => {
-      const docShares = shares.filter((s) => s.documentId == d._id);
+      const docShares = shares.filter((s) => s.documentId == d.id);
       return {
         _id: d._id,
         metadata: d.metadata as DocumentMetadata,
@@ -149,6 +150,24 @@ export class StorageService {
     const document = await this.getDocument(ownerWalletAddress, index);
     if (document.profileWalletAddress !== callerAddress) {
       throw new UnauthorizedException();
+    }
+    const documentPda = await this.getProfileDocumentPda(
+      document.profileWalletAddress,
+      document.index,
+    );
+    const provider = this.getProvider();
+    const program = new Program(
+      VAULT_IDL as Idl,
+      new PublicKey(VAULT_IDL.metadata.address),
+      provider,
+    ) as Program<Vault>;
+    const profileDocAccount = await program.account.documentData.fetch(
+      documentPda,
+    );
+    if (!profileDocAccount.deleted) {
+      throw new BadRequestException(
+        `Document has not been market as deleted yet`,
+      );
     }
     await this.s3.delete(document.objectName);
   }

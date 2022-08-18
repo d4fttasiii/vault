@@ -55,6 +55,37 @@ export type Vault = {
       ];
     },
     {
+      name: 'deleteProfileDocument';
+      accounts: [
+        {
+          name: 'profile';
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: 'document';
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: 'profileData';
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: 'systemProgram';
+          isMut: false;
+          isSigner: false;
+        },
+      ];
+      args: [
+        {
+          name: 'documentIndex';
+          type: 'u64';
+        },
+      ];
+    },
+    {
       name: 'createProfileDocumentShare';
       accounts: [
         {
@@ -175,6 +206,10 @@ export type Vault = {
             name: 'created';
             type: 'i64';
           },
+          {
+            name: 'deleted';
+            type: 'bool';
+          },
         ];
       };
     },
@@ -220,6 +255,11 @@ export type Vault = {
       code: 6000;
       name: 'OnlyProfileOwnerCanAccess';
       msg: 'OnlyProfileOwnerCanAccess';
+    },
+    {
+      code: 6001;
+      name: 'DocumentAlreadyDeleted';
+      msg: 'DocumentAlreadyDeleted';
     },
   ];
 };
@@ -277,6 +317,37 @@ export const IDL: Vault = {
         {
           name: 'name',
           type: 'string',
+        },
+      ],
+    },
+    {
+      name: 'deleteProfileDocument',
+      accounts: [
+        {
+          name: 'profile',
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: 'document',
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: 'profileData',
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: 'systemProgram',
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: 'documentIndex',
+          type: 'u64',
         },
       ],
     },
@@ -401,6 +472,10 @@ export const IDL: Vault = {
             name: 'created',
             type: 'i64',
           },
+          {
+            name: 'deleted',
+            type: 'bool',
+          },
         ],
       },
     },
@@ -446,6 +521,11 @@ export const IDL: Vault = {
       code: 6000,
       name: 'OnlyProfileOwnerCanAccess',
       msg: 'OnlyProfileOwnerCanAccess',
+    },
+    {
+      code: 6001,
+      name: 'DocumentAlreadyDeleted',
+      msg: 'DocumentAlreadyDeleted',
     },
   ],
 };

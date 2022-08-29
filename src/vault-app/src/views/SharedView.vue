@@ -2,7 +2,7 @@
 
 import axios from 'axios'
 import { useJwtStore } from '../stores/jwt';
-import { ref, onBeforeMount, computed, reactive } from 'vue'
+import { ref, onBeforeMount, watch } from 'vue'
 
 const jwtStore = useJwtStore();
 let shares = ref([]);
@@ -48,7 +48,6 @@ const downloadDocument = async (share) => {
     }
 }
 
-
 onBeforeMount(() => {
     if (jwtStore.isLoggedIn) {
         loadShared()
@@ -56,6 +55,12 @@ onBeforeMount(() => {
     else {
         alert('Please connect your wallet first!')
     }
+})
+
+watch(() => jwtStore.isLoggedIn, (isLoggedIn, _) => {
+  if (isLoggedIn) {
+    loadShared()
+  }
 })
 
 </script>

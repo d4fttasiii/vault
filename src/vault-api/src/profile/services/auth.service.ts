@@ -41,12 +41,12 @@ export class AuthService {
   }
 
   async verifyJwt(token: string): Promise<boolean> {
-    let isValid: boolean = false;
+    let isValid = false;
     try {
       const payload = await this.jwtTokenService.verifyAsync(token);
       const { walletAddress } = payload;
 
-      let profile = await this.profileService.get(walletAddress);
+      const profile = await this.profileService.get(walletAddress);
       if (profile) {
         isValid = true;
       }

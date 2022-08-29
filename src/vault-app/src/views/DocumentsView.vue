@@ -2,7 +2,7 @@
 
 import axios from 'axios'
 import { useAnchorWallet } from 'solana-wallets-vue'
-import { ref, onBeforeMount, computed, reactive } from 'vue'
+import { ref, onBeforeMount, computed, reactive, watch } from 'vue'
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { utils, Program, AnchorProvider, BN } from '@project-serum/anchor';
 import { useJwtStore } from '../stores/jwt';
@@ -17,7 +17,9 @@ const program = computed(() => new Program(VAULT_IDL, new PublicKey(VAULT_IDL.me
 
 let documents = ref([]);
 const data = reactive({
-    invitee: ''
+    invitee: '',
+    shareHours: 8,
+    details: undefined
 })
 
 const getProfileDocumentPda = async (address, docCount) => {
@@ -115,7 +117,7 @@ const shareDocument = async (doc) => {
 
     try {
         await program.value.methods
-            .createProfileDocumentShare(new BN(doc.index), new PublicKey(data.invitee), new BN(8))
+            .createProfileDocumentShare(new BN(doc.index), new PublicKey(data.invitee), new BN(data.shareHours))
             .accounts({
                 profile: wallet.value.publicKey,
                 document: profileDocumentPda,
@@ -123,13 +125,11 @@ const shareDocument = async (doc) => {
             })
             .rpc();
 
-    } catch {
-
-    }
+    } catch { }
 
     const token = jwtStore.$state.token;
     await axios.post('http://localhost:3000/api/v1/share', {
-        walletAddress: doc.profileWalletAddress,
+        walletAddress: doc.profileAddress,
         index: doc.index,
         inviteeAddress: data.invitee,
         sharePda: profileDocumentSharePda.toBase58(),
@@ -138,6 +138,12 @@ const shareDocument = async (doc) => {
             Authorization: `Bearer ${token}`
         },
     })
+}
+
+const showDetails = async (doc) => {
+    data.details = doc
+    documents.value.forEach(d => d.detailsShown = false)
+    doc.detailsShown = true
 }
 
 onBeforeMount(() => {
@@ -149,75 +155,132 @@ onBeforeMount(() => {
     }
 })
 
+watch(() => jwtStore.isLoggedIn, (isLoggedIn, _) => {
+    if (isLoggedIn) {
+        loadDocuments()
+    }
+})
+
 </script>
 
 <template>
     <main>
         <h1 class="text-3xl font-bold underline">Documents</h1>
-        <div class="my-5">
-            <label class="block text-sm font-bold mb-2" for="invitee">Invitee</label>
-            <input
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="invitee" type="text" v-model="data.invitee" />
+        <div class="flex my-5">
+            <div class="mr-2">
+                <label class="block text-sm font-bold mb-2" for="invitee">Invitee</label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="invitee" type="text" v-model="data.invitee" />
+            </div>
+            <div class="mx-2">
+                <label class="block text-sm font-bold mb-2" for="invitee">TTL (Hours)</label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="shareHours" type="number" v-model="data.shareHours" />
+            </div>
         </div>
         <div class="mt-10 w-full">
-            <div class="inline-block w-full shadow-md rounded-lg overflow-hidden">
-                <table class="w-full leading-normal">
-                    <thead>
-                        <tr>
-                            <th
-                                class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Nr.
-                            </th>
-                            <th
-                                class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Metadata
-                            </th>
-                            <th
-                                class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                Created At / Updated At
-                            </th>
-                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="doc in documents" :key="doc._id">
-                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                <p class="text-gray-900 whitespace-no-wrap">
-                                    {{ doc.index }}
-                                </p>
-                            </td>
-                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                <p class="text-gray-900 whitespace-no-wrap">{{ doc.metadata.name }}</p>
-                                <p class="text-gray-600 whitespace-no-wrap">{{ doc.metadata.size / 1000 }} KB</p>
-                            </td>
-                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                <p class="text-gray-900 whitespace-no-wrap">{{ doc.createdAt }}</p>
-                                <p class="text-gray-900 whitespace-no-wrap">{{ doc.updatedAt }}</p>
-                            </td>
-                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
-                                <div class="flex">
-                                    <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
-                                        @click="() => downloadDocument(doc)">
-                                        <font-awesome-icon icon="fa-solid fa-download"></font-awesome-icon>
-                                    </button>
-                                    <button class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
-                                        @click="() => shareDocument(doc)">
-                                        <font-awesome-icon icon="fa-solid fa-share"></font-awesome-icon>
-                                    </button>
-                                    <button class="rounded-full bg-blue-600 text-white hover:bg-blue-600 p-1 px-2 mx-2"
-                                        >
-                                        <font-awesome-icon icon="fa-solid fa-angle-down" />
-                                    </button>
-                                    <button class="rounded-full bg-red-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
-                                        @click="() => deleteDocument(doc)">
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-8 rounded-lg overflow-hidden">
+                    <table class="w-full leading-normal">
+                        <thead>
+                            <tr>
+                                <th
+                                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Nr.
+                                </th>
+                                <th
+                                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Metadata
+                                </th>
+                                <th
+                                    class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Created At / Updated At
+                                </th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(doc, index) in documents" :key="doc._id">
+                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p class="text-gray-900 whitespace-no-wrap">
+                                        {{ index + 1 }}
+                                    </p>
+                                </td>
+                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p class="text-gray-900 whitespace-no-wrap">{{ doc.metadata.name }}</p>
+                                </td>
+                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                    <p class="text-gray-900 whitespace-no-wrap">{{ doc.createdAt }}</p>
+                                    <p class="text-gray-900 whitespace-no-wrap">{{ doc.updatedAt }}</p>
+                                </td>
+                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
+                                    <div class="flex">
+                                        <button
+                                            class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                            @click="() => downloadDocument(doc)">
+                                            <font-awesome-icon icon="fa-solid fa-download"></font-awesome-icon>
+                                        </button>
+                                        <button
+                                            class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                            @click="() => shareDocument(doc)">
+                                            <font-awesome-icon icon="fa-solid fa-share"></font-awesome-icon>
+                                        </button>
+                                        <button
+                                            class="rounded-full bg-blue-600 text-white hover:bg-blue-400 p-1 px-2 mx-2"
+                                            :class="{ 'bg-blue-400': doc.detailsShown }" @click="() => showDetails(doc)"
+                                            :disabled="doc.detailsShown">
+                                            <font-awesome-icon icon="fa-solid fa-right-to-bracket" />
+                                        </button>
+                                        <!-- <button
+                                            class="rounded-full bg-red-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                            @click="() => deleteDocument(doc)">
+                                            <font-awesome-icon icon="fa-solid fa-circle-xmark" />
+                                        </button> -->
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-span-4">
+                    <div class="max-w-sm bg-white rounded-lg border shadow-md border-gray-200 bg-gray-100"
+                        v-if="data.details">
+                        <!-- <a href="#">
+                            <img class="rounded-t-lg" src="/docs/images/blog/image-1.jpg" alt="" />
+                        </a> -->
+                        <div class="p-5">
+                            <div class="grid grid-cols-12 gap-4">
+                                <div class="col-span-9">
+                                    <h5 class="mb-2 font-bold tracking-tight text-gray-700">
+                                        {{ data.details.metadata.name }}</h5>
+
+                                    <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">{{
+                                            data.details.metadata.size /
+                                            1000
+                                    }} KB</p>
+                                </div>
+                                <div class="col-span-3">
+                                    <button class="rounded-full bg-red-800 text-white hover:bg-red-600 p-1 px-2"
+                                        @click="() => deleteDocument(data.details)">
                                         <font-awesome-icon icon="fa-solid fa-circle-xmark" />
                                     </button>
                                 </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </div>
+                            <div>
+                                <h3 class="text-gray-700">Shares</h3>
+                                <div class="p-2 text-sm" v-for="(share, index) in data.details.shares"
+                                    :key="share.sharePda">
+                                    <p class="text-gray-900 whitespace-no-wrap truncate">{{ share.sharePda }}</p>
+                                    <p class="text-gray-600 whitespace-no-wrap">{{ share.updatedAt }}</p>
+                                    <p class="text-gray-600 whitespace-no-wrap">{{ share.validUntil }}</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>

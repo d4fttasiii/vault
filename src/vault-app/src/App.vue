@@ -1,30 +1,13 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import { WalletMultiButton, useAnchorWallet, useWallet } from 'solana-wallets-vue'
-import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'
-import { AnchorProvider } from '@project-serum/anchor'
-import { watch, computed, reactive } from 'vue'
+import { watch, reactive } from 'vue'
 import axios from 'axios'
 import { useJwtStore } from './stores/jwt';
 
 const anchorWallet = useAnchorWallet();
 const solanaWallet = reactive(useWallet());
 const jwtStore = useJwtStore();
-const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-const provider = computed(
-  () =>
-    new AnchorProvider(connection, wallet.value, {
-      preflightCommitment: "confirmed",
-    })
-);
-const program = computed(
-  () =>
-    new Program(
-      PATIENT_DOCUMENT_ACCESS_IDL,
-      new PublicKey(PATIENT_DOCUMENT_ACCESS_IDL.metadata.address),
-      provider.value
-    )
-);
 
 const login = async (address) => {
   if (!anchorWallet.value) {
@@ -51,6 +34,12 @@ const login = async (address) => {
 watch(() => solanaWallet.connected, async (isConnected, _) => {
   if (isConnected) {
     await login(solanaWallet.publicKey.toBase58());
+  }
+})
+
+watch(() => jwtStore.isLoggedIn, (isLoggedIn, _) => {
+  if (!isLoggedIn) {
+    jwtStore.reset()
   }
 })
 

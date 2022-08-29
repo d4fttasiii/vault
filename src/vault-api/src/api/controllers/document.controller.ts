@@ -1,9 +1,12 @@
+import { ToggleDocumentEncryption } from '@core/dtos/toggle-document-encryption-dto';
 import {
+  Body,
   Controller,
   Delete,
   Get,
   Param,
   Post,
+  Put,
   Request,
   UploadedFile,
   UseGuards,
@@ -58,6 +61,26 @@ export class DocumentController {
       walletAddress,
       parseInt(index, 10),
       downloaderWalletAddress,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':index/encryption')
+  @ApiOperation({ summary: 'Encrypts and decrypts a specific document' })
+  @ApiResponse({
+    status: 200,
+    description: 'Document was encrypted or decrypted',
+  })
+  async toggleEncryption(
+    @Request() req,
+    @Param('index') index: string,
+    @Body() data: ToggleDocumentEncryption,
+  ) {
+    const walletAddress = req.user.walletAddress;
+    this.storageService.toggleDocumentEncryption(
+      walletAddress,
+      parseInt(index, 10),
+      data,
     );
   }
 

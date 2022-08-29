@@ -3,9 +3,11 @@
 import axios from 'axios'
 import { useAnchorWallet } from 'solana-wallets-vue'
 import { ref, onBeforeMount, computed, reactive, watch } from 'vue'
-import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
-import { utils, Program, AnchorProvider, BN } from '@project-serum/anchor';
-import { useJwtStore } from '../stores/jwt';
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'
+import { utils, Program, AnchorProvider, BN } from '@project-serum/anchor'
+import { useJwtStore } from '../stores/jwt'
+import Chip from '../components/Chip.vue'
+import Address from '../components/Address.vue'
 
 import * as VAULT_IDL from '../idl/vault.json'
 
@@ -146,6 +148,21 @@ const showDetails = async (doc) => {
     doc.detailsShown = true
 }
 
+const toggleDocumentEncryption = async (doc) => {
+    try {
+        const token = jwtStore.$state.token;
+        const url = `http://localhost:3000/api/v1/document/${doc.index}/encryption`;
+        await axios.put(url, { key: 'k3y' }, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+        });
+    }
+    catch (error) {
+        console.error(error);
+    }
+}
+
 onBeforeMount(() => {
     if (jwtStore.isLoggedIn) {
         loadDocuments()
@@ -182,7 +199,7 @@ watch(() => jwtStore.isLoggedIn, (isLoggedIn, _) => {
         </div>
         <div class="mt-10 w-full">
             <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-8 rounded-lg overflow-hidden">
+                <div class="col-span-7 rounded-lg overflow-hidden">
                     <table class="w-full leading-normal">
                         <thead>
                             <tr>
@@ -205,30 +222,25 @@ watch(() => jwtStore.isLoggedIn, (isLoggedIn, _) => {
                             <tr v-for="(doc, index) in documents" :key="doc._id">
                                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                     <p class="text-gray-900 whitespace-no-wrap">
-                                        {{ index + 1 }}
+                                        {{  index + 1  }}
                                     </p>
                                 </td>
                                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p class="text-gray-900 whitespace-no-wrap">{{ doc.metadata.name }}</p>
+                                    <p class="text-gray-900 whitespace-no-wrap">{{  doc.metadata.name  }}</p>
                                 </td>
                                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <p class="text-gray-900 whitespace-no-wrap">{{ doc.createdAt }}</p>
-                                    <p class="text-gray-900 whitespace-no-wrap">{{ doc.updatedAt }}</p>
+                                    <p class="text-gray-900 whitespace-no-wrap">{{  doc.createdAt  }}</p>
+                                    <p class="text-gray-900 whitespace-no-wrap">{{  doc.updatedAt  }}</p>
                                 </td>
                                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
                                     <div class="flex">
                                         <button
-                                            class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
+                                            class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 ml-1"
                                             @click="() => downloadDocument(doc)">
                                             <font-awesome-icon icon="fa-solid fa-download"></font-awesome-icon>
                                         </button>
                                         <button
-                                            class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-2"
-                                            @click="() => shareDocument(doc)">
-                                            <font-awesome-icon icon="fa-solid fa-share"></font-awesome-icon>
-                                        </button>
-                                        <button
-                                            class="rounded-full bg-blue-600 text-white hover:bg-blue-400 p-1 px-2 mx-2"
+                                            class="rounded-full bg-blue-600 text-white hover:bg-blue-400 p-1 px-2 mx-1"
                                             :class="{ 'bg-blue-400': doc.detailsShown }" @click="() => showDetails(doc)"
                                             :disabled="doc.detailsShown">
                                             <font-awesome-icon icon="fa-solid fa-right-to-bracket" />
@@ -244,37 +256,61 @@ watch(() => jwtStore.isLoggedIn, (isLoggedIn, _) => {
                         </tbody>
                     </table>
                 </div>
-                <div class="col-span-4">
+                <div class="col-span-5">
                     <div class="max-w-sm bg-white rounded-lg border shadow-md border-gray-200 bg-gray-100"
                         v-if="data.details">
                         <!-- <a href="#">
                             <img class="rounded-t-lg" src="/docs/images/blog/image-1.jpg" alt="" />
                         </a> -->
-                        <div class="p-5">
-                            <div class="grid grid-cols-12 gap-4">
-                                <div class="col-span-9">
-                                    <h5 class="mb-2 font-bold tracking-tight text-gray-700">
-                                        {{ data.details.metadata.name }}</h5>
-
-                                    <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">{{
-                                            data.details.metadata.size /
-                                            1000
-                                    }} KB</p>
+                        <div class="p-3">
+                            <div class="grid grid-cols-12 gap-2">
+                                <div class="col-span-8">
+                                    <h5 class="font-bold tracking-tight text-gray-700">
+                                        {{  data.details.metadata.name  }}
+                                    </h5>
+                                    <p class="mb-3 font-normal text-gray-700 text-sm dark:text-gray-400">
+                                        {{  data.details.metadata.size / 1000  }} KB
+                                    </p>
                                 </div>
-                                <div class="col-span-3">
-                                    <button class="rounded-full bg-red-800 text-white hover:bg-red-600 p-1 px-2"
-                                        @click="() => deleteDocument(data.details)">
-                                        <font-awesome-icon icon="fa-solid fa-circle-xmark" />
-                                    </button>
+                                <div class="col-span-4">
+                                    <div class="flex">
+                                        <button
+                                            class="rounded-full bg-red-800 text-white hover:bg-red-600 p-1 px-2 mr-1"
+                                            @click="() => deleteDocument(data.details)">
+                                            <font-awesome-icon icon="fa-solid fa-circle-xmark" />
+                                        </button>
+                                        <button
+                                            class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-1"
+                                            @click="() => shareDocument(doc)">
+                                            <font-awesome-icon icon="fa-solid fa-share"></font-awesome-icon>
+                                        </button>
+                                        <button
+                                            class="rounded-full bg-blue-800 text-white hover:bg-blue-600 p-1 px-2 mx-1"
+                                            @click="() => toggleDocumentEncryption(data.details)">
+                                            <font-awesome-icon v-if="data.details.isEncrypted" icon="fa-solid fa-lock">
+                                            </font-awesome-icon>
+                                            <font-awesome-icon v-if="!data.details.isEncrypted"
+                                                icon="fa-solid fa-lock-open"></font-awesome-icon>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div>
-                                <h3 class="text-gray-700">Shares</h3>
-                                <div class="p-2 text-sm" v-for="(share, index) in data.details.shares"
+
+                            </div>
+                            <div>
+                                <h5 class="text-gray-700">Shares</h5>
+                                <div v-for="(share, index) in data.details.shares"
                                     :key="share.sharePda">
-                                    <p class="text-gray-900 whitespace-no-wrap truncate">{{ share.sharePda }}</p>
-                                    <p class="text-gray-600 whitespace-no-wrap">{{ share.updatedAt }}</p>
-                                    <p class="text-gray-600 whitespace-no-wrap">{{ share.validUntil }}</p>
+                                    <Address :address="share.sharePda"></Address>
+                                    <div class="flex mt-1">
+                                        <Chip :date="share.updatedAt" class="mr-1">
+                                            <font-awesome-icon icon="fa-solid fa-pen-to-square" class="fa-lg mr-1" />
+                                        </Chip>
+                                        <Chip :date="share.validUntil">
+                                            <font-awesome-icon icon="fa-solid fa-clock" class="fa-lg mr-1" />
+                                        </Chip>
+                                    </div>
                                 </div>
                             </div>
 

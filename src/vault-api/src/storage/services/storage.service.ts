@@ -1,5 +1,6 @@
 import { DocumentData, DocumentMetadata, SharedDocument } from '@core/dtos';
 import { CreateDocumentShareDto } from '@core/dtos/create-document-share-dto';
+import { ToggleDocumentEncryption } from '@core/dtos/toggle-document-encryption-dto';
 import { SolanaConfig } from '@core/models/config';
 import { EncryptionService, S3Service, SolanaService } from '@core/services';
 import {
@@ -46,7 +47,7 @@ export class StorageService {
   constructor(
     private s3: S3Service,
     private configService: ConfigService,
-    private encrypt: EncryptionService,
+    private encryptionService: EncryptionService,
     private solanaService: SolanaService,
     @InjectModel(PROFILE_SCHEMA)
     private profileModel: Model<ProfileDoc>,
@@ -94,6 +95,7 @@ export class StorageService {
             sharePda: ds.sharePda,
           };
         }),
+        isEncrypted: d.isEncrypted,
       };
     });
   }
@@ -130,6 +132,9 @@ export class StorageService {
     downloaderWalletAddress: string,
   ): Promise<StreamableFile> {
     const document = await this.getDocument(ownerWalletAddress, index);
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
     if (document.profileWalletAddress !== downloaderWalletAddress) {
       await this.ensureCanAccessDocuments(
         ownerWalletAddress,
@@ -142,12 +147,44 @@ export class StorageService {
     return new StreamableFile(content);
   }
 
+  async toggleDocumentEncryption(
+    walletAddress: string,
+    index: number,
+    data: ToggleDocumentEncryption,
+  ) {
+    const document = await this.getDocument(walletAddress, index);
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+    const content = await this.s3.download(document.objectName);
+    if (document.isEncrypted) {
+      const decryptedContent = this.encryptionService.decrypt(
+        content,
+        data.key,
+      );
+      await this.s3.delete(document.objectName);
+      await this.s3.upload(document.objectName, decryptedContent);
+    } else {
+      const encryptedContent = this.encryptionService.encrypt(
+        content,
+        data.key,
+      );
+      await this.s3.delete(document.objectName);
+      await this.s3.upload(document.objectName, encryptedContent);
+    }
+    document.isEncrypted = !document.isEncrypted;
+    await document.save();
+  }
+
   async delete(
     ownerWalletAddress: string,
     index: number,
     callerAddress: string,
   ) {
     const document = await this.getDocument(ownerWalletAddress, index);
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
     if (document.profileWalletAddress !== callerAddress) {
       throw new UnauthorizedException();
     }

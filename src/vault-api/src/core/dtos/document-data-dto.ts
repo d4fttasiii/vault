@@ -7,6 +7,7 @@ export interface DocumentData {
   updatedAt: Date;
   metadata: DocumentMetadata;
   shares?: DocumentShareData[];
+  isEncrypted: boolean;
 }
 
 export interface DocumentMetadata {

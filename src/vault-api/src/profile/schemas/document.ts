@@ -38,6 +38,9 @@ export class ProfileDocument extends Document {
     extension: string;
   };
 
+  @Prop({ type: Boolean })
+  isEncrypted: boolean;
+
   updatedAt: Date;
   createdAt: Date;
 }
